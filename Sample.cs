@@ -142,7 +142,7 @@ class SampleListener
 
         if (frame.Hands.Count != 0)
         {
-            Console.WriteLine("");
+            Console.WriteLine("Detected hands: {0}", frame.Hands.Count);
         }
     }
 
