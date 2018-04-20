@@ -13,13 +13,17 @@ namespace LeapServer
         /// </summary>
         static HttpListener _sHttpListener;
 
+        static string _sPort = "80";
+
         static Program()
         {
             try
             {
                 _sHttpListener = new HttpListener();
-                _sHttpListener.Prefixes.Add("http://*/");
+                _sHttpListener.Prefixes.Add(string.Format("http://*:{0}/", _sPort));
                 _sHttpListener.Start();
+                Console.WriteLine("Leap Server is listening.");
+                Console.WriteLine("Ready to browse: http://localhost:{0}/", _sPort);
             }
             catch (Exception ex)
             {
@@ -27,11 +31,25 @@ namespace LeapServer
             }
         }
 
+        static void ConnectEvent(object sender, ConnectionEventArgs evt)
+        {
+            Console.WriteLine("ConnectEvent: ", evt.type);
+        }
+
         static void Main(string[] args)
         {
             // Create a sample listener and controller
             SampleListener listener = new SampleListener();
             Controller controller = new Controller();
+
+            Console.WriteLine("Leap is connected: {0}", controller.IsConnected);
+            if (!controller.IsConnected)
+            {
+                Console.Error.Write("Be sure to install the Leap Orion beta software: https://developer.leapmotion.com/get-started");
+                Console.Error.WriteLine();
+            }
+
+            controller.Connect += ConnectEvent;
 
             controller.SetPolicy(Controller.PolicyFlag.POLICY_BACKGROUND_FRAMES);
 
