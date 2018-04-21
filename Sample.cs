@@ -140,10 +140,12 @@ class SampleListener
             */
         }
 
+        /*
         if (frame.Hands.Count != 0)
         {
             Console.WriteLine("Detected hands: {0}", frame.Hands.Count);
         }
+        */
     }
 
     public void OnServiceConnect(object sender, ConnectionEventArgs args)

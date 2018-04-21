@@ -23,7 +23,7 @@ namespace LeapServer
                 _sHttpListener.Prefixes.Add(string.Format("http://*:{0}/", _sPort));
                 _sHttpListener.Start();
                 Console.WriteLine("Leap Server is listening.");
-                Console.WriteLine("Ready to browse: http://localhost:{0}/", _sPort);
+                Console.WriteLine("Ready to browse: http://localhost:{0}/ or http://localhost:{0}/refresh", _sPort);
             }
             catch (Exception ex)
             {
@@ -31,9 +31,31 @@ namespace LeapServer
             }
         }
 
-        static void ConnectEvent(object sender, ConnectionEventArgs evt)
+        static string GetRefreshContent()
         {
-            Console.WriteLine("ConnectEvent: ", evt.type);
+            return @"<html>
+<head>
+    <title>Leap Server - Refresh Page</title>
+</head>
+<body>
+    <h1>Leap Server - Refresh Page</h1>
+    <pre id='preLeap' style='border:2px solid Black; padding: 1em;'></pre>
+    <script>
+        setInterval(function() {
+            var req = new XMLHttpRequest();
+            var url = 'http://localhost:" + _sPort + @"';
+            req.open('GET', url, true);
+            req.onreadystatechange = function(evt) {
+                if (req.readyState == 4 && req.status == 200)
+                {
+                    preLeap.innerHTML = this.responseText;
+                }
+            };
+            req.send();
+        }, 100);
+    </script>
+</body>
+</html>";
         }
 
         static void Main(string[] args)
@@ -49,8 +71,6 @@ namespace LeapServer
                 Console.Error.WriteLine();
             }
 
-            controller.Connect += ConnectEvent;
-
             controller.SetPolicy(Controller.PolicyFlag.POLICY_BACKGROUND_FRAMES);
 
             controller.FrameReady += listener.OnFrame;
@@ -62,9 +82,21 @@ namespace LeapServer
                 {
                     context = _sHttpListener.GetContext();
 
-                    byte[] bytes = UTF8Encoding.UTF8.GetBytes(SampleListener._sJSON.ToString());
-                    context.Response.OutputStream.Write(bytes, 0, bytes.Length);
-                    context.Response.OutputStream.Flush();
+                    if (context.Request.Url.LocalPath.ToLower().StartsWith("/refresh"))
+                    {
+                        string page = GetRefreshContent();
+                        context.Response.ContentLength64 = page.Length;
+                        context.Response.ContentType = "text/html";
+                        byte[] bytes = UTF8Encoding.UTF8.GetBytes(page);
+                        context.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                        context.Response.OutputStream.Flush();
+                    }
+                    else
+                    {
+                        byte[] bytes = UTF8Encoding.UTF8.GetBytes(SampleListener._sJSON.ToString());
+                        context.Response.OutputStream.Write(bytes, 0, bytes.Length);
+                        context.Response.OutputStream.Flush();
+                    }
                 }
                 catch (Exception ex)
                 {
